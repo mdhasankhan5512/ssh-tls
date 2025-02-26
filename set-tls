@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Step 1: Install stunnel
+echo "Installing stunnel..."
+sudo apt update
+sudo apt install -y stunnel4
+
+# Step 2: Enable stunnel (set ENABLED=1)
+echo "Enabling stunnel..."
+sudo sed -i 's/^ENABLED=.*/ENABLED=1/' /etc/default/stunnel4
+
+# Step 3: Create the stunnel configuration file
+echo "Creating stunnel configuration..."
+
+cat <<EOF | sudo tee /etc/stunnel/stunnel.conf
+[ssh]
+accept = 443
+connect = 127.0.0.1:22
+cert = /etc/letsencrypt/live/your-domain.com/fullchain.pem
+key = /etc/letsencrypt/live/your-domain.com/privkey.pem
+EOF
+
+# Step 4: Prompt for SSL certificate and key paths
+echo "Please provide the path to your SSL certificate (e.g., /etc/letsencrypt/live/your-domain.com/fullchain.pem):"
+read -r cert_path
+
+echo "Please provide the path to your SSL private key (e.g., /etc/letsencrypt/live/your-domain.com/privkey.pem):"
+read -r key_path
+
+# Replace placeholders with actual user input
+sudo sed -i "s|cert = /etc/letsencrypt/live/your-domain.com/fullchain.pem|cert = $cert_path|" /etc/stunnel/stunnel.conf
+sudo sed -i "s|key = /etc/letsencrypt/live/your-domain.com/privkey.pem|key = $key_path|" /etc/stunnel/stunnel.conf
+
+# Step 5: Restart stunnel service
+echo "Restarting stunnel service..."
+sudo systemctl restart stunnel4
+
+# Final message
+echo "stunnel installation and configuration complete!"
